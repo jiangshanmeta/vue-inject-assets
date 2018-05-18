@@ -24,5 +24,25 @@ export default{
         childA2,
         shareA
     },
+    // provideComponent:{
+    //     shareA:true,
+    //     testShare1:()=>import("./shareA"),
+    //     testShare2:{
+    //         component:'shareA',
+    //         force:true,
+    //     },
+    //     testShare3:"shareA"
+    // },
+    provideComponent:[
+        'shareA',
+        {
+            component:()=>import("./shareA"),
+            name:"shareB",
+            force:true,
+        }
+    ],
+    created(){
+        console.log(this)
+    }
 }
 </script>
