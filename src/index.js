@@ -6,11 +6,12 @@ import {
     provideOptionPrefix,
     provideVMKey,
     forceProvideVMKey,
+    injectOptionPrefix,
 } from "./const"
 
 const assets = ['component','filter','directive'];
 
-function normalizeProvideOption(options,key){
+function normalizeProvideAsset(options,key){
     // 可能是数组，也可能是对象
     let target = Object.create(null);
 
@@ -68,6 +69,7 @@ function resolveProvideAsset(target,provide,assets,key){
                 get(){
                     return assets[value]
                 },
+                enumerable:true,
             })
         }else{
             target[name] = value;
@@ -88,7 +90,8 @@ function resolveForceProvideAsset(target,provide,assets,key){
             Object.defineProperty(target,name,{
                 get(){
                     return assets[value]
-                }
+                },
+                enumerable:true,
             })
         }else{
             target[name] = value;
@@ -96,11 +99,66 @@ function resolveForceProvideAsset(target,provide,assets,key){
     });
 }
 
+function normalizeInjectAsset(options){
+    // 最终处理成对象形式，键是最终注册名，值是组件组件提供的资源名称
+    if(Array.isArray(options)){
+        let target = Object.create(null);
+        for(let item of options){
+            target[item] = item
+        }
+        return target
+    }
+
+    return options;
+}
+
 export default {
     install(Vue){
         Vue.mixin({
             beforeCreate(){
                 // 处理inject
+                assets.forEach((asset)=>{
+                    const key = ucfirst(asset);
+                    const forceAsset = Object.create(null);
+                    let vm = this.$parent;
+
+                    // 强制注册的资源
+                    while(vm){
+                        Object.keys(vm[forceProvideVMKey + key]).forEach((name)=>{
+                            this.$options[asset + 's'][name] = vm[forceProvideVMKey + key][name];
+                            forceAsset[name] = true;
+                        })
+
+                        vm = vm.$parent;
+                    }
+
+                    // 自身申明注册的资源
+                    const injectAssetOption = this.$options[injectOptionPrefix + key];
+                    if(!injectAssetOption){
+                        return;
+                    }
+                    const normalizedInjectOption = normalizeInjectAsset(injectAssetOption);
+
+                    Object.keys(normalizedInjectOption).forEach((localAssetName)=>{
+                        const parentAssetName = normalizedInjectOption[localAssetName];
+                        // 如果是强制注册的不再注册
+                        if(forceAsset[parentAssetName]){
+                            return;
+                        }
+                        let vm = this.$parent;
+                        while(vm){
+                            if(vm[provideVMKey + key][parentAssetName]){
+                                this.$options[asset + 's'][localAssetName] = vm[provideVMKey + key][parentAssetName];
+                                return;
+                            }
+                            vm = vm.$parent;
+                        }
+
+                    });
+
+
+                });
+
             },
             created(){
                 // 处理 provide
@@ -114,11 +172,11 @@ export default {
                         return;
                     }
 
-                    const nomalizedProvideOption = normalizeProvideOption(provideAssetOption,asset);
+                    const normalizedProvideOption = normalizeProvideAsset(provideAssetOption,asset);
                     const assetObj = this.$options[asset + 's'];
 
-                    resolveProvideAsset(this[provideVMKey + key],nomalizedProvideOption,assetObj,asset);
-                    resolveForceProvideAsset(this[forceProvideVMKey + key],nomalizedProvideOption,assetObj,asset);
+                    resolveProvideAsset(this[provideVMKey + key],normalizedProvideOption,assetObj,asset);
+                    resolveForceProvideAsset(this[forceProvideVMKey + key],normalizedProvideOption,assetObj,asset);
 
 
                 });

@@ -25,7 +25,7 @@ export default{
         shareA
     },
     // provideComponent:{
-    //     shareA:true,
+        // shareA:true,
     //     testShare1:()=>import("./shareA"),
     //     testShare2:{
     //         component:'shareA',
@@ -35,11 +35,11 @@ export default{
     // },
     provideComponent:[
         'shareA',
-        {
-            component:()=>import("./shareA"),
-            name:"shareB",
-            force:true,
-        }
+        // {
+        //     component:()=>import("./shareA"),
+        //     name:"shareB",
+        //     force:true,
+        // }
     ],
     created(){
         console.log(this)
