@@ -35,11 +35,11 @@ export default{
     // },
     provideComponent:[
         'shareA',
-        // {
-        //     component:()=>import("./shareA"),
-        //     name:"shareB",
-        //     force:true,
-        // }
+        {
+            component:()=>import("./shareA"),
+            name:"shareB",
+            force:true,
+        }
     ],
     created(){
         console.log(this)
